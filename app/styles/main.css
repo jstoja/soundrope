@@ -1,0 +1,49 @@
+html {
+  background-color: #F5F2EB; }
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #424342;
+  width: 810px;
+  margin: auto; }
+
+.content {
+  width: 810px;
+  height: 100%;
+  background-color: #D9CDB8;
+  top: 0;
+  bottom: 0;
+  position: absolute; }
+
+.content h1 {
+  text-align: center; }
+
+#logo {
+  background-image: url("/images/logo.png");
+  background-repeat: no-repeat;
+  width: 120px;
+  height: 120px;
+  background-size: 120px;
+  margin: 20px auto 20px auto; }
+
+.player {
+  width: 640px;
+  margin: auto; }
+
+.votes {
+  margin: auto;
+  width: 640px; }
+  .votes ul {
+    list-style-type: none;
+    padding-left: 0; }
+    .votes ul li {
+      padding: 8px; }
+    .votes ul .odd {
+      background-color: #7a959d; }
+    .votes ul .pair {
+      background-color: #88a6af; }
+
+.addMusic {
+  text-align: center; }
+  .addMusic input {
+    margin-right: 10px; }
