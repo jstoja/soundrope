@@ -197,33 +197,38 @@ var Player = React.createClass({
 		});
 	},
 	componentDidMount: function() {
-		//this.setState({player: this.props.music.type});
+		this.setState({player: this.props.music.type});
 	},
 	componentWillReceiveProps: function(nextProps) {
+		this.setState({willChangePlayer: false});
 		var change = this.state.willChangePlayer;
-		if (this.state.player !== nextProps.music.type) {
+		if (this.props.music.type !== nextProps.music.type) {
+			console.log("Changing player from " + this.props.music.type + " to " + nextProps.music.type);
 			this.setState({player: nextProps.music.type, willChangePlayer: true});
 		}
 	},
-	shouldComponentUpdate: function() {
-		console.log(this.state.player + " ?= " + this.props.music.type);
-		if (this.state.willChangePlayer === true) {
-			console.log("I JUST WANT TO CHANGE THE MUSIC OF THE PLAYER");
-			this.refs.player.changeMusic(this.props.music);
-			return false; // DO NOT re-RENDER
-		} else {
+	shouldComponentUpdate: function(nextProps, nextState) {
+		if (nextState.willChangePlayer === true) {
 			console.log("I NEED A NEW PLAYER");
+			return true;
+		} else {
+			console.log("I JUST WANT TO CHANGE THE MUSIC OF THE PLAYER");
+			this.refs.player.changeMusic(nextProps.music);
+			return false; // DO NOT re-RENDER
 		}
 	},
 	nextMusic: function() {
 		this.props.nextMusic();
 	},
 	render: function() {
-		if (this.props.music.type === "youtube") {
-			return <YoutubePlayer className='player' ref='player' music={this.props.music} nextMusic={this.nextMusic}/>;
-		} else if (this.props.music.type === "soundcloud") {
-			return <SoundcloudPlayer className='player' ref='player' music={this.props.music} nextMusic={this.nextMusic} />;
-		}
+		console.log("Props type: " + this.props.music.type);
+		console.log("State type: " + this.state.player);
+		switch (this.props.music.type) {
+			case "youtube":
+				return <YoutubePlayer className='player' ref='player' music={this.props.music} nextMusic={this.nextMusic}/>;
+			case "soundcloud":
+				return <SoundcloudPlayer className='player' ref='player' music={this.props.music} nextMusic={this.nextMusic} />;
+		};
 	}
 });
 
