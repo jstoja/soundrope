@@ -1,6 +1,7 @@
 /** @jsx React.DOM */
 'use strict';
 
+var client_id = "d2cda7a5597f57543f0caec0fbdad68b";
 require.config({
 	baseUrl: 'scripts',
 	paths: {
@@ -23,6 +24,38 @@ function getQueryVariable(url, variable) {
 	}
 	console.log('Query variable %s not found', variable);
 }
+
+var SoundcloudPlayer = React.createClass({
+	getInitialState: function() {
+		return ({player: null});
+	},
+	nextMusicWhenEnded: function() {
+		this.props.nextMusic();
+	},
+	loadPlayer: function() {
+		var iframe = document.getElementById('player');
+		iframe.src = "https://w.soundcloud.com/player/?url="+ this.props.music.uri;
+		var widget = SC.Widget(iframe);
+		widget.bind(SC.Widget.Events.READY, function() {
+			this.play();
+		}.bind(widget));
+
+		return (
+			player
+		);
+	},
+	componentDidMount: function() {
+		this.setState({player: this.loadPlayer(this.props.music)});
+		console.log('New soundcloud player');
+	},
+	render: function() {
+		return (
+			<iframe id='player'>
+			</iframe>
+		);
+	}
+});
+
 var YoutubePlayer = React.createClass({
 	getInitialState: function() {
 		return ({player: null});
@@ -56,7 +89,7 @@ var YoutubePlayer = React.createClass({
 		}
 	},
 	componentDidMount: function() {
-		this.setState({player: this.loadPlayer(this.props.music)});
+		this.setState({player: this.loadPlayer()});
 		console.log("New youtube player");
 	},
 	render: function() {
@@ -67,7 +100,7 @@ var YoutubePlayer = React.createClass({
 	}
 });
 
-var Votes = React.createClass({
+var Playlist = React.createClass({
 	getInitialState: function() {
 		return {songs: []};
 	},
@@ -80,7 +113,22 @@ var Votes = React.createClass({
 			success: function (data) {
 				this.refs.musicId.getDOMNode().value = '';
 				data.entry.type = 'youtube';
+				data.entry.title = data.entry.title.$t;
 				this.setState({songs: this.state.songs.concat([data.entry])});
+			}.bind(this),
+			error: function(xhr, status, err) {
+			}.bind(this)
+		});
+	},
+	addSoundcloudMusic: function(url) {
+		var query = "http://api.soundcloud.com/resolve.json?url=" + url + "&client_id=" + client_id;
+		$.ajax({
+			url: query,
+			dataType: 'json',
+			success: function (data) {
+				this.refs.musicId.getDOMNode().value = '';
+				data.type = 'soundcloud';
+				this.setState({songs: this.state.songs.concat([data])});
 			}.bind(this),
 			error: function(xhr, status, err) {
 			}.bind(this)
@@ -90,7 +138,7 @@ var Votes = React.createClass({
 		var musicLink = this.refs.musicId.getDOMNode().value.trim();
 
 		if (musicLink.match(/.+(soundcloud).+/)) {
-			console.log("Soundcloud");
+			this.addSoundcloudMusic(musicLink);
 		} else if (musicLink.match(/.+(youtube).+/)) {
 			this.addYoutubeMusic(musicLink);
 		}
@@ -111,7 +159,7 @@ var Votes = React.createClass({
 	render: function() {
 		var style = '';
 		var songsList = this.state.songs.map(function (song, songIndex) {
-			console.log('list of songs: ' + song.title.$t);
+			console.log('list of songs: ' + song.title);
 			if (songIndex %2 == 0) {
 				style = 'pair';
 			} else {
@@ -119,13 +167,13 @@ var Votes = React.createClass({
 			}
 			return (
 				<li className={style}>
-					{song.title.$t}
+					{song.title}
 					<span>[<a href='#' onClick={this.killMusic.bind(this, songIndex)}>X</a>]</span>
 				</li>
 			);
 		}.bind(this));
 		return (
-			<div className='votes'>
+			<div className='playlist'>
 				<ul>
 					{songsList}
 				</ul>
@@ -141,45 +189,65 @@ var Votes = React.createClass({
 	}
 });
 
+var Player = React.createClass({
+	getInitialState: function() {
+		return ({
+			player: null,
+			willChangePlayer: false
+		});
+	},
+	componentDidMount: function() {
+		//this.setState({player: this.props.music.type});
+	},
+	componentWillReceiveProps: function(nextProps) {
+		var change = this.state.willChangePlayer;
+		if (this.state.player !== nextProps.music.type) {
+			this.setState({player: nextProps.music.type, willChangePlayer: true});
+		}
+	},
+	shouldComponentUpdate: function() {
+		console.log(this.state.player + " ?= " + this.props.music.type);
+		if (this.state.willChangePlayer === true) {
+			console.log("I JUST WANT TO CHANGE THE MUSIC OF THE PLAYER");
+			this.refs.player.changeMusic(this.props.music);
+			return false; // DO NOT re-RENDER
+		} else {
+			console.log("I NEED A NEW PLAYER");
+		}
+	},
+	nextMusic: function() {
+		this.props.nextMusic();
+	},
+	render: function() {
+		if (this.props.music.type === "youtube") {
+			return <YoutubePlayer className='player' ref='player' music={this.props.music} nextMusic={this.nextMusic}/>;
+		} else if (this.props.music.type === "soundcloud") {
+			return <SoundcloudPlayer className='player' ref='player' music={this.props.music} nextMusic={this.nextMusic} />;
+		}
+	}
+});
 
 var App = React.createClass({
 	getInitialState: function() {
 		return {currentMusic: null, player: null}
 	},
-	handleChange: function() {
-		var nextSong = this.refs.votes.nextSong();
+	nextMusic: function() {
+		var nextSong = this.refs.playlist.nextSong();
 		this.setState({currentMusic: nextSong});
-
-		if ((this.state.currentMusic !== null) && (this.state.player === this.state.currentMusic.type)) {
-			console.log("I JUST WANT TO CHANGE THE MUSIC OF THE PLAYER");
-			this.refs.player.changeMusic(nextSong);
-		} else {
-			console.log("I NEED A NEW PLAYER");
-			this.setState({player: nextSong.type});
-		}
-		//console.log(this.state.player);
-		//this.refs.player.changeMusic(nextSong);
-	},
-	getPlayer: function() {
-		var player = null;
-		if (this.state.player !== null && this.state.currentMusic !== null) {
-			if (this.state.currentMusic.type === "youtube") {
-				player = <YoutubePlayer className='player' ref='player' music={this.state.currentMusic} nextMusic={this.handleChange}/>;
-			} else if (this.state.currentMusic.type === "soundcloud") {
-				player = <SoundcloudPlayer className='player' ref='player' nextMusic={this.hangleChange} />;
-			}
-		}
-		return player
 	},
 	render: function() {
+		var player = null;
+		if (this.state.currentMusic !== null) {
+			player = <Player ref='player' music={this.state.currentMusic} nextMusic={this.nextMusic}/>;
+		}
 		return (
 			<div className='content'>
 				<div id='logo'></div>
 				<div className='player'>
-					{this.getPlayer()}
+					{player}
 				</div>
-				<h1 onClick={this.handleChange}>Next music !</h1>
-				<Votes className='votes' ref='votes' nextSong={this.registerNextSong} />
+				<h1 onClick={this.nextMusic}>Next music !</h1>
+				<Playlist className='playlist' ref='playlist' />
 			</div>
 		);
 	}

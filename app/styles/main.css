@@ -30,17 +30,17 @@ body {
   width: 640px;
   margin: auto; }
 
-.votes {
+.playlist {
   margin: auto;
   width: 640px; }
-  .votes ul {
+  .playlist ul {
     list-style-type: none;
     padding-left: 0; }
-    .votes ul li {
+    .playlist ul li {
       padding: 8px; }
-    .votes ul .odd {
+    .playlist ul .odd {
       background-color: #7a959d; }
-    .votes ul .pair {
+    .playlist ul .pair {
       background-color: #88a6af; }
 
 .addMusic {
